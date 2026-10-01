@@ -1,12 +1,12 @@
 {
-    "name": "dispatch_iq",
-    "short_name": "dispatch_iq",
+    "name": "DispatchIQ",
+    "short_name": "DispatchIQ",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#F4F7F7",
+    "theme_color": "#0F7C7A",
+    "description": "Regional appliance repair service dispatch.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

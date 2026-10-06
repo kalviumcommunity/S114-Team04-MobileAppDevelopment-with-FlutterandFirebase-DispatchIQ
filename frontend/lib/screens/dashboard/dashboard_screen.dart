@@ -336,8 +336,8 @@ class _DashboardBody extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      children: const [
+                    const Column(
+                      children: [
                         Icon(Icons.radio_button_checked_rounded,
                             size: 12, color: AppTheme.primary),
                         SizedBox(height: 8),

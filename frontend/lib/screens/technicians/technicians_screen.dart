@@ -35,8 +35,8 @@ class TechniciansScreen extends StatelessWidget {
                 style: TextStyle(color: AppTheme.muted, fontSize: 14),
               ),
               const SizedBox(height: 18),
-              Row(
-                children: const [
+              const Row(
+                children: [
                   Expanded(child: _TeamStat(label: 'Available', value: '5', color: AppTheme.green)),
                   SizedBox(width: 12),
                   Expanded(child: _TeamStat(label: 'On Route', value: '3', color: AppTheme.primary)),

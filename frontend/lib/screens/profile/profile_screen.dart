@@ -41,14 +41,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(_name,
-                                style: TextStyle(
+                                style: const TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.w800,
                                     color: AppTheme.navy)),
                             const Text('Dispatcher',
                                 style: TextStyle(color: AppTheme.muted)),
                             Text(_email,
-                                style: TextStyle(color: AppTheme.muted)),
+                                style: const TextStyle(color: AppTheme.muted)),
                           ],
                         ),
                       ),

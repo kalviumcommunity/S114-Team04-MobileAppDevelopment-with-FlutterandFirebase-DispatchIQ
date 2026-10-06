@@ -80,8 +80,8 @@ class AnalyticsScreen extends StatelessWidget {
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
                 childAspectRatio: metricAspectRatio,
-                children: [
-                  _MetricCard(label: 'Jobs Completed', value: '$totalCompleted', color: AppTheme.primary),
+                children: const [
+                  _MetricCard(label: 'Jobs Completed', value: '0', color: AppTheme.primary),
                   _MetricCard(label: 'On-Time Arrival', value: '86%', color: AppTheme.green),
                   _MetricCard(label: 'Repeat Visits', value: '14%', color: AppTheme.amber),
                   _MetricCard(label: 'Utilization', value: '71%', color: AppTheme.blue),

@@ -401,13 +401,24 @@ class JobDetailScreen extends StatelessWidget {
                   ),
                   if (!JobService.isRepeatVisit(job))
                     OutlinedButton.icon(
-                      onPressed: () {
-                        JobService.updateJob(
-                          job.copyWith(
-                              isRepeatVisit: true,
-                              status: JobStatus.repeatVisit),
-                        );
-                        Navigator.of(context).pop(true);
+                      onPressed: () async {
+                        try {
+                          await JobService.updateJob(
+                            job.copyWith(
+                                isRepeatVisit: true,
+                                status: JobStatus.repeatVisit),
+                          );
+                          if (context.mounted) {
+                            Navigator.of(context).pop(true);
+                          }
+                        } catch (error) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Could not save job: $error')),
+                            );
+                          }
+                        }
                       },
                       icon: const Icon(Icons.flag_rounded),
                       label: const Text('Flag Repeat Visit'),
@@ -533,9 +544,17 @@ class JobDetailScreen extends StatelessWidget {
     );
 
     if (technicianId == null) return;
-    JobService.assignTechnician(job.id, technicianId);
-    if (context.mounted) {
-      Navigator.of(context).pop(true);
+    try {
+      await JobService.assignTechnician(job.id, technicianId);
+      if (context.mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save assignment: $error')),
+        );
+      }
     }
   }
 }

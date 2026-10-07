@@ -73,4 +73,41 @@ class Technician {
         return 'Offline';
     }
   }
+
+  factory Technician.fromJson(Map<String, dynamic> json) {
+    return Technician(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      phone: json['phone'] as String,
+      email: json['email'] as String,
+      location: json['location'] as String,
+      expertise: List<String>.from(json['expertise'] as List),
+      status: TechnicianStatus.values.byName(json['status'] as String),
+      currentWorkload: json['currentWorkload'] as int,
+      maxWorkload: json['maxWorkload'] as int,
+      jobsCompleted: json['jobsCompleted'] as int,
+      firstTimeFixRate: json['firstTimeFixRate'] as int,
+      completedToday: json['completedToday'] as int,
+      distanceKm: (json['distanceKm'] as num).toDouble(),
+      currentAssignedJobs:
+          List<String>.from(json['currentAssignedJobs'] as List),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'phone': phone,
+        'email': email,
+        'location': location,
+        'expertise': expertise,
+        'status': status.name,
+        'currentWorkload': currentWorkload,
+        'maxWorkload': maxWorkload,
+        'jobsCompleted': jobsCompleted,
+        'firstTimeFixRate': firstTimeFixRate,
+        'completedToday': completedToday,
+        'distanceKm': distanceKm,
+        'currentAssignedJobs': currentAssignedJobs,
+      };
 }

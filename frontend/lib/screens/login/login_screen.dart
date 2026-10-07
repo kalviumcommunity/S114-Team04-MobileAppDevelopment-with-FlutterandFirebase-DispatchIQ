@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
+import '../../services/backend_service.dart';
 import '../../utils/constants.dart';
 import '../dashboard/dashboard_screen.dart';
 
@@ -17,6 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
       TextEditingController(text: 'dispatcher@dispatchiq.com');
   final _passwordController = TextEditingController(text: 'admin123');
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  String? _loginError;
 
   @override
   void dispose() {
@@ -25,12 +28,30 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
+  Future<void> _login() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-    );
+    setState(() {
+      _isLoading = true;
+      _loginError = null;
+    });
+    try {
+      await BackendService.initialize();
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => _loginError = 'Backend connection failed: $error');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -298,8 +319,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 18),
+                          if (_loginError != null) ...[
+                            Text(
+                              _loginError!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           FilledButton(
-                            onPressed: _login,
+                            onPressed: _isLoading ? null : _login,
                             style: FilledButton.styleFrom(
                               backgroundColor: AppTheme.primary,
                               padding: const EdgeInsets.symmetric(vertical: 18),
@@ -307,13 +337,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Sign In',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Sign In',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                           ),
                           const SizedBox(height: 16),
                           const Center(

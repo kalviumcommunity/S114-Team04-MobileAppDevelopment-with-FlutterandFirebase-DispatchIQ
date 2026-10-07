@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dispatch_iq/app/app.dart';
 import 'package:dispatch_iq/services/assignment_service.dart';
 import 'package:dispatch_iq/models/job.dart';
+import 'package:dispatch_iq/models/technician.dart';
 import 'package:dispatch_iq/screens/analytics/analytics_screen.dart';
 import 'package:dispatch_iq/screens/dashboard/dashboard_screen.dart';
 import 'package:dispatch_iq/screens/jobs/jobs_screen.dart';
@@ -23,6 +24,21 @@ import 'package:dispatch_iq/services/technician_service.dart';
 import 'package:dispatch_iq/widgets/summary_card.dart';
 
 void main() {
+  test('job JSON payloads round-trip all demo jobs', () {
+    for (final job in JobService.allJobs) {
+      expect(Job.fromJson(job.toJson()).toJson(), equals(job.toJson()));
+    }
+  });
+
+  test('technician JSON payloads round-trip all demo technicians', () {
+    for (final technician in TechnicianService.allTechnicians) {
+      expect(
+        Technician.fromJson(technician.toJson()).toJson(),
+        equals(technician.toJson()),
+      );
+    }
+  });
+
   testWidgets('DispatchIQ launches the sign-in screen', (tester) async {
     await tester.pumpWidget(const DispatchIQApp());
 
@@ -64,15 +80,15 @@ void main() {
     expect(find.byType(LoginScreen), findsOneWidget);
   });
 
-  test('assigning a technician updates the shared job data', () {
+  test('assigning a technician updates the shared job data', () async {
     final originalJob = JobService.allJobs.first;
     final originalTechnician = TechnicianService.getById('TECH-101')!;
-    addTearDown(() {
-      JobService.updateJob(originalJob);
+    addTearDown(() async {
+      await JobService.updateJob(originalJob);
       TechnicianService.updateTechnician(originalTechnician);
     });
 
-    JobService.assignTechnician(originalJob.id, 'TECH-101');
+    await JobService.assignTechnician(originalJob.id, 'TECH-101');
 
     final updatedJob =
         JobService.allJobs.firstWhere((job) => job.id == originalJob.id);
@@ -80,39 +96,39 @@ void main() {
     expect(updatedJob.status, JobStatus.assigned);
   });
 
-  test('assignment updates technician workload and active schedule', () {
+  test('assignment updates technician workload and active schedule', () async {
     final job = JobService.allJobs.firstWhere(
       (job) => job.status == JobStatus.unassigned,
     );
     final technician = TechnicianService.getById('TECH-101')!;
     final originalJob = job;
     final originalTechnician = technician;
-    addTearDown(() {
-      JobService.updateJob(originalJob);
+    addTearDown(() async {
+      await JobService.updateJob(originalJob);
       TechnicianService.updateTechnician(originalTechnician);
     });
 
-    JobService.assignTechnician(job.id, technician.id);
+    await JobService.assignTechnician(job.id, technician.id);
 
     final updatedTechnician = TechnicianService.getById(technician.id)!;
     expect(updatedTechnician.currentWorkload, technician.currentWorkload + 1);
     expect(updatedTechnician.currentAssignedJobs, contains(job.id));
   });
 
-  test('reassignment moves workload from previous to new technician', () {
+  test('reassignment moves workload from previous to new technician', () async {
     final job = JobService.allJobs.firstWhere(
       (job) =>
           job.technicianId == 'TECH-101' && job.status != JobStatus.completed,
     );
     final previous = TechnicianService.getById('TECH-101')!;
     final next = TechnicianService.getById('TECH-104')!;
-    addTearDown(() {
-      JobService.updateJob(job);
+    addTearDown(() async {
+      await JobService.updateJob(job);
       TechnicianService.updateTechnician(previous);
       TechnicianService.updateTechnician(next);
     });
 
-    JobService.assignTechnician(job.id, next.id);
+    await JobService.assignTechnician(job.id, next.id);
 
     expect(TechnicianService.getById(previous.id)!.currentWorkload,
         (previous.currentWorkload - 1).clamp(0, previous.maxWorkload));
@@ -185,7 +201,8 @@ void main() {
     expect(find.text(job.fault), findsOneWidget);
   });
 
-  testWidgets('dashboard at-risk metric displays a numeric count', (tester) async {
+  testWidgets('dashboard at-risk metric displays a numeric count',
+      (tester) async {
     await tester.pumpWidget(const MaterialApp(home: DashboardScreen()));
 
     expect(find.textContaining("Instance of 'Job'"), findsNothing);
@@ -196,7 +213,7 @@ void main() {
       (tester) async {
     final originalJob = JobService.allJobs.first;
     final technician = TechnicianService.allTechnicians.first;
-    addTearDown(() => JobService.updateJob(originalJob));
+    addTearDown(() async => JobService.updateJob(originalJob));
 
     await tester.pumpWidget(
       MaterialApp(

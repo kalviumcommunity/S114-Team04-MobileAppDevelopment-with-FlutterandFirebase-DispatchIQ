@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
 
 void main() {
   runApp(const DispatchIqApp());
@@ -297,54 +298,307 @@ class _StatusPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4), decoration: BoxDecoration(color: alert ? const Color(0xFFFFF0E9) : const Color(0xFFEAF5EF), borderRadius: BorderRadius.circular(5)), child: Text(label, style: TextStyle(color: alert ? const Color(0xFFB45031) : const Color(0xFF23845D), fontSize: 9, fontWeight: FontWeight.w800)));
 }
 
-class _TechnicianPulse extends StatelessWidget {
+class _TechnicianPulse extends StatefulWidget {
   const _TechnicianPulse();
+
+  @override
+  State<_TechnicianPulse> createState() => _TechnicianPulseState();
+}
+
+class _TechnicianPulseState extends State<_TechnicianPulse> {
+  late Future<List<dynamic>> technicians;
+
+  @override
+  void initState() {
+    super.initState();
+    technicians = ApiService.getTechnicians();
+  }
+
   @override
   Widget build(BuildContext context) {
-    const techs = [('Maya Chen', 'En route to Oakwood', 'On route', Color(0xFF3EB489), 'MC', Color(0xFFE9B872)), ('Jordan Bell', 'Finishing in Northgate', 'On job', Color(0xFF416A9A), 'JB', Color(0xFF9FC7E5)), ('Sam Rivera', 'Available · 3 jobs today', 'Available', Color(0xFF9B6A21), 'SR', Color(0xFFD5B6E5)), ('Priya Shah', 'Break until 12:45', 'On break', Color(0xFF8C6A9B), 'PS', Color(0xFFF1C6D6))];
-    final technicianRows = techs.map((tech) => Padding(
-      padding: const EdgeInsets.only(bottom: 17),
-      child: Row(children: [
-        CircleAvatar(radius: 17, backgroundColor: tech.$6, child: Text(tech.$5, style: const TextStyle(color: Color(0xFF172A3A), fontSize: 10, fontWeight: FontWeight.w800))),
-        const SizedBox(width: 10),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(tech.$1, style: const TextStyle(color: Color(0xFF172A3A), fontSize: 12, fontWeight: FontWeight.w700)), const SizedBox(height: 3), Text(tech.$2, style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 10))])),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(tech.$3, style: TextStyle(color: tech.$4, fontSize: 10, fontWeight: FontWeight.w800)), const SizedBox(height: 5), Container(width: 7, height: 7, decoration: BoxDecoration(color: tech.$4, shape: BoxShape.circle))]),
-      ]),
-    )).toList();
-    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE6EAE8))), child: Column(children: technicianRows));
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFE6EAE8),
+        ),
+      ),
+      child: FutureBuilder<List<dynamic>>(
+        future: technicians,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Text(
+              'Failed to load technicians',
+              style: TextStyle(color: Colors.red),
+            );
+          }
+
+          final techs = snapshot.data ?? [];
+
+          if (techs.isEmpty) {
+            return const Text('No technicians found');
+          }
+
+          return Column(
+            children: techs.map((tech) {
+              final name = tech['name'] ?? 'Unknown';
+              final status = tech['status'] ?? 'Unknown';
+              final workload = tech['workload'] ?? 0;
+              final expertise =
+                  tech['appliance_expertise'] ?? 'No expertise';
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 17),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 17,
+                      backgroundColor: const Color(0xFFE9B872),
+                      child: Text(
+                        name
+                            .toString()
+                            .split(' ')
+                            .map((e) => e.isNotEmpty ? e[0] : '')
+                            .take(2)
+                            .join(),
+                        style: const TextStyle(
+                          color: Color(0xFF172A3A),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              color: Color(0xFF172A3A),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '$expertise · $workload jobs',
+                            style: TextStyle(
+                              color: Colors.blueGrey.shade400,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    Text(
+                      status,
+                      style: const TextStyle(
+                        color: Color(0xFF23845D),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
+    );
   }
 }
 
+
 class AssignJobSheet extends StatelessWidget {
   const AssignJobSheet({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final technicianOptions = ['Sam Rivera · 1.8 mi away · 2 jobs', 'Maya Chen · 4.2 mi away · 3 jobs', 'Priya Shah · 5.1 mi away · 1 job'];
+    final technicianOptions = [
+      'Sam Rivera · 1.8 mi away · 2 jobs',
+      'Maya Chen · 4.2 mi away · 3 jobs',
+      'Priya Shah · 5.1 mi away · 1 job',
+    ];
+
     return Padding(
-      padding: EdgeInsets.fromLTRB(22, 0, 22, MediaQuery.viewInsetsOf(context).bottom + 22),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Assign a technician', style: TextStyle(color: Color(0xFF172A3A), fontSize: 20, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 6),
-        Text('Choose the best fit using location, workload and expertise.', style: TextStyle(color: Colors.blueGrey.shade500, fontSize: 12)),
-        const SizedBox(height: 18),
-        const Text('JOB TO ASSIGN', style: TextStyle(color: Color(0xFF8093A4), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-        const SizedBox(height: 8),
-        Container(width: double.infinity, padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: const Color(0xFFF3F7F5), borderRadius: BorderRadius.circular(9)), child: const Row(children: [Icon(Icons.local_laundry_service_outlined, color: Color(0xFF23845D)), SizedBox(width: 10), Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Oven temperature issue', style: TextStyle(color: Color(0xFF172A3A), fontWeight: FontWeight.w700, fontSize: 13)), SizedBox(height: 3), Text('Riverside · 12:00 - 13:00', style: TextStyle(color: Color(0xFF8093A4), fontSize: 11))])])),
-        const SizedBox(height: 18),
-        RadioGroup<int>(groupValue: 0, onChanged: (_) {}, child: Column(children: technicianOptions.asMap().entries.map((entry) => RadioListTile<int>(value: entry.key, contentPadding: EdgeInsets.zero, title: Text(entry.value, style: const TextStyle(color: Color(0xFF172A3A), fontSize: 12, fontWeight: FontWeight.w600)), subtitle: const Text('Appliance specialist · Good fit', style: TextStyle(fontSize: 10)), activeColor: const Color(0xFF3EB489))).toList())),
-        const SizedBox(height: 6),
-        SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Confirm assignment'))),
-      ]),
+      padding: EdgeInsets.fromLTRB(
+        22,
+        0,
+        22,
+        MediaQuery.viewInsetsOf(context).bottom + 22,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Assign a technician',
+            style: TextStyle(
+              color: Color(0xFF172A3A),
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Choose the best fit using location, workload and expertise.',
+            style: TextStyle(
+              color: Colors.blueGrey.shade500,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'JOB TO ASSIGN',
+            style: TextStyle(
+              color: Color(0xFF8093A4),
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F7F5),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.local_laundry_service_outlined,
+                  color: Color(0xFF23845D),
+                ),
+                SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Oven temperature issue',
+                      style: TextStyle(
+                        color: Color(0xFF172A3A),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Riverside · 12:00 - 13:00',
+                      style: TextStyle(
+                        color: Color(0xFF8093A4),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          RadioGroup<int>(
+            groupValue: 0,
+            onChanged: (_) {},
+            child: Column(
+              children: technicianOptions.asMap().entries.map((entry) {
+                return RadioListTile<int>(
+                  value: entry.key,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    entry.value,
+                    style: const TextStyle(
+                      color: Color(0xFF172A3A),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Appliance specialist · Good fit',
+                    style: TextStyle(fontSize: 10),
+                  ),
+                  activeColor: const Color(0xFF3EB489),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Confirm assignment'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _PlaceholderView extends StatelessWidget {
   const _PlaceholderView({required this.index});
+
   final int index;
+
   @override
   Widget build(BuildContext context) {
-    final labels = ['Overview', 'Jobs', 'Technicians', 'Insights'];
-    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon([Icons.grid_view_rounded, Icons.route_rounded, Icons.groups_rounded, Icons.bar_chart_rounded][index], size: 52, color: const Color(0xFF3EB489)), const SizedBox(height: 16), Text('${labels[index]} view', style: const TextStyle(color: Color(0xFF172A3A), fontSize: 24, fontWeight: FontWeight.w800)), const SizedBox(height: 8), Text('This workspace is ready for the next workflow.', style: TextStyle(color: Colors.blueGrey.shade500))]));
+    final labels = [
+      'Overview',
+      'Jobs',
+      'Technicians',
+      'Insights',
+    ];
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            [
+              Icons.grid_view_rounded,
+              Icons.route_rounded,
+              Icons.groups_rounded,
+              Icons.bar_chart_rounded,
+            ][index],
+            size: 52,
+            color: const Color(0xFF3EB489),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '${labels[index]} view',
+            style: const TextStyle(
+              color: Color(0xFF172A3A),
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'This workspace is ready for the next workflow.',
+            style: TextStyle(
+              color: Colors.blueGrey.shade500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

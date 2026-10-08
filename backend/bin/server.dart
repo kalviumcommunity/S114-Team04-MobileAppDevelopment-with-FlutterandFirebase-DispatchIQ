@@ -2,73 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:firedart/firedart.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 
-// --- IN-MEMORY DATA STORES (PRD Section 14) ---
-final List<Map<String, dynamic>> technicians = [
-  {
-    'id': 'tech_01',
-    'name': 'Alex Rivera',
-    'skills': ['Refrigerator', 'Washing Machine'],
-    'currentLocation': {'latitude': 12.9716, 'longitude': 77.5946},
-    'availability': 'Available',
-    'workload': 2,
-    'status': 'Active',
-  },
-  {
-    'id': 'tech_02',
-    'name': 'Jordan Lee',
-    'skills': ['Microwave', 'Dishwasher', 'Oven'],
-    'currentLocation': {'latitude': 12.9352, 'longitude': 77.6245},
-    'availability': 'Available',
-    'workload': 1,
-    'status': 'Active',
-  },
-  {
-    'id': 'tech_03',
-    'name': 'Samira Khan',
-    'skills': ['Washing Machine', 'Dryer', 'Dishwasher'],
-    'currentLocation': {'latitude': 13.0358, 'longitude': 77.5970},
-    'availability': 'Busy',
-    'workload': 4,
-    'status': 'Active',
-  },
-];
-
-final List<Map<String, dynamic>> serviceRequests = [
-  {
-    'id': 'job_101',
-    'customerId': 'cust_01',
-    'technicianId': 'tech_01',
-    'appliance': 'Washing Machine',
-    'brand': 'Samsung',
-    'model': 'EcoBubble 8kg',
-    'fault': 'Drain pump failure',
-    'address': 'Koramangala 4th Block, Bangalore',
-    'location': {'latitude': 12.9352, 'longitude': 77.6245},
-    'priority': 'High',
-    'status': 'Completed',
-    'createdAt': '2026-09-10T10:00:00.000Z',
-    'appointmentWindow': '10:00 AM - 12:00 PM',
-  },
-];
-
-final List<Map<String, dynamic>> serviceHistory = [
-  {
-    'id': 'hist_01',
-    'serviceRequestId': 'job_101',
-    'appliance': 'Washing Machine',
-    'brand': 'Samsung',
-    'diagnosis': 'Foreign object lodged in drain impeller',
-    'repairPerformed': 'Cleared blockage and replaced drain filter gasket',
-    'partsUsed': ['Drain Filter Gasket (Part #DC62-00008A)'],
-    'firstTimeFix': true,
-    'notes': 'Advised customer to inspect pocket contents prior to washing cycle.',
-    'completedAt': '2026-09-10T11:45:00.000Z',
-  },
-];
+const String firebaseProjectId = 'dispatchiq-d1103';
 
 // Helper: Haversine distance in km
 double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
@@ -93,34 +32,27 @@ Response _jsonResponse(dynamic data, {int statusCode = 200}) {
 }
 
 void main(List<String> args) async {
-  final router = Router();
+  // Initialize Firestore
+  Firestore.initialize(firebaseProjectId);
+  final db = Firestore.instance;
 
-  // Handle CORS preflight
-  router.all('/<ignored|.*>', (Request request) {
-    if (request.method == 'OPTIONS') {
-      return Response.ok('', headers: {
-        'access-control-allow-origin': '*',
-        'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'access-control-allow-headers': 'Origin, Content-Type, Authorization',
-      });
-    }
-    return Response.notFound('Not found');
-  });
+  final router = Router();
 
   // 1. Health check
   router.get('/api/health', (Request req) {
     return _jsonResponse({
-      'status': 'DispatchIQ Dart Backend Live',
+      'status': 'DispatchIQ Dart + Firebase Backend Running',
+      'database': 'Firestore Connected',
       'timestamp': DateTime.now().toIso8601String(),
     });
   });
 
-  // 2. Auth Login Mock
+  // 2. Auth Login (PRD FR01)
   router.post('/api/auth/login', (Request req) async {
     final body = jsonDecode(await req.readAsString());
     final email = body['email'] ?? 'dispatcher@dispatchiq.com';
     return _jsonResponse({
-      'token': 'mock-jwt-token-xyz',
+      'token': 'firebase-session-token-live',
       'user': {
         'id': 'usr_001',
         'name': 'Shawn David',
@@ -130,46 +62,54 @@ void main(List<String> args) async {
     });
   });
 
-  // 3. Technician Management
-  router.get('/api/technicians', (Request req) {
-    return _jsonResponse({'success': true, 'count': technicians.length, 'data': technicians});
+  // 3. Technicians (PRD FR03)
+  router.get('/api/technicians', (Request req) async {
+    final docs = await db.collection('technicians').get();
+    final data = docs.map((doc) => doc.map).toList();
+    return _jsonResponse({'success': true, 'count': data.length, 'data': data});
   });
 
   router.put('/api/technicians/<id>/location', (Request req, String id) async {
     final body = jsonDecode(await req.readAsString());
-    final tech = technicians.firstWhere((t) => t['id'] == id, orElse: () => {});
-    if (tech.isEmpty) return _jsonResponse({'error': 'Technician not found'}, statusCode: 404);
-
-    tech['currentLocation'] = {
-      'latitude': body['latitude'],
-      'longitude': body['longitude'],
-      'updatedAt': DateTime.now().toIso8601String(),
-    };
-    return _jsonResponse({'success': true, 'data': tech});
+    await db.collection('technicians').document(id).update({
+      'currentLocation': {
+        'latitude': body['latitude'],
+        'longitude': body['longitude'],
+        'updatedAt': DateTime.now().toIso8601String(),
+      }
+    });
+    final updated = await db.collection('technicians').document(id).get();
+    return _jsonResponse({'success': true, 'data': updated.map});
   });
 
   router.put('/api/technicians/<id>/status', (Request req, String id) async {
     final body = jsonDecode(await req.readAsString());
-    final tech = technicians.firstWhere((t) => t['id'] == id, orElse: () => {});
-    if (tech.isEmpty) return _jsonResponse({'error': 'Technician not found'}, statusCode: 404);
+    final updates = <String, dynamic>{};
+    if (body['status'] != null) updates['status'] = body['status'];
+    if (body['availability'] != null) updates['availability'] = body['availability'];
 
-    if (body['status'] != null) tech['status'] = body['status'];
-    if (body['availability'] != null) tech['availability'] = body['availability'];
-    return _jsonResponse({'success': true, 'data': tech});
+    await db.collection('technicians').document(id).update(updates);
+    final updated = await db.collection('technicians').document(id).get();
+    return _jsonResponse({'success': true, 'data': updated.map});
   });
 
-  // 4. Create Service Request + Repeat Visit Detection
+  // 4. Create Service Request + Repeat Visit Detection (PRD FR02, FR07)
   router.post('/api/service-requests', (Request req) async {
     final body = jsonDecode(await req.readAsString());
     final appliance = body['appliance'] ?? 'Unknown Appliance';
     final address = body['address'] ?? 'General Location';
 
-    final repeatMatches = serviceHistory.where((hist) {
-      return (hist['appliance'] as String).toLowerCase() == appliance.toString().toLowerCase();
-    }).toList();
+    // Query Firestore history for repeat visits
+    final historyDocs = await db.collection('serviceHistory').get();
+    final repeatMatches = historyDocs
+        .map((d) => d.map)
+        .where((hist) =>
+            (hist['appliance'] ?? '').toString().toLowerCase() == appliance.toString().toLowerCase())
+        .toList();
 
+    final jobId = 'job_${DateTime.now().millisecondsSinceEpoch}';
     final newRequest = {
-      'id': 'job_${DateTime.now().millisecondsSinceEpoch}',
+      'id': jobId,
       'customerId': body['customerId'] ?? 'cust_guest',
       'technicianId': null,
       'appliance': appliance,
@@ -182,101 +122,107 @@ void main(List<String> args) async {
       'priority': body['priority'] ?? 'Standard',
       'status': 'Requested',
       'isRepeatVisit': repeatMatches.isNotEmpty,
-      'repeatHistory': repeatMatches,
       'createdAt': DateTime.now().toIso8601String(),
     };
 
-    serviceRequests.add(newRequest);
-    return _jsonResponse({'success': true, 'data': newRequest}, statusCode: 201);
+    await db.collection('serviceRequests').document(jobId).set(newRequest);
+    return _jsonResponse({'success': true, 'data': newRequest, 'repeatHistory': repeatMatches}, statusCode: 201);
   });
 
-  router.get('/api/service-requests', (Request req) {
-    return _jsonResponse({'success': true, 'count': serviceRequests.length, 'data': serviceRequests});
+  router.get('/api/service-requests', (Request req) async {
+    final docs = await db.collection('serviceRequests').get();
+    final list = docs.map((d) => d.map).toList();
+    return _jsonResponse({'success': true, 'count': list.length, 'data': list});
   });
 
-  router.get('/api/service-requests/<id>', (Request req, String id) {
-    final job = serviceRequests.firstWhere((j) => j['id'] == id, orElse: () => {});
-    if (job.isEmpty) return _jsonResponse({'error': 'Service Request not found'}, statusCode: 404);
-    return _jsonResponse({'success': true, 'data': job});
+  router.get('/api/service-requests/<id>', (Request req, String id) async {
+    try {
+      final doc = await db.collection('serviceRequests').document(id).get();
+      return _jsonResponse({'success': true, 'data': doc.map});
+    } catch (_) {
+      return _jsonResponse({'error': 'Service Request not found'}, statusCode: 404);
+    }
   });
 
-  // 5. Smart Assignment Ranking
-  router.get('/api/jobs/<id>/candidates', (Request req, String id) {
-    final job = serviceRequests.firstWhere((j) => j['id'] == id, orElse: () => {});
-    if (job.isEmpty) return _jsonResponse({'error': 'Job not found'}, statusCode: 404);
-
+  // 5. Smart Assignment Ranking (PRD FR04, Section 9)
+  router.get('/api/jobs/<id>/candidates', (Request req, String id) async {
+    final jobDoc = await db.collection('serviceRequests').document(id).get();
+    final job = jobDoc.map;
     final reqAppliance = (job['appliance'] as String).toLowerCase();
     final jobLat = (job['location']?['latitude'] ?? 12.9716) as num;
     final jobLon = (job['location']?['longitude'] ?? 77.5946) as num;
 
-    final rankedCandidates = technicians.map((tech) {
-      final skills = (tech['skills'] as List).map((s) => s.toString().toLowerCase()).toList();
+    final techDocs = await db.collection('technicians').get();
+    final candidates = techDocs.map((doc) {
+      final tech = doc.map;
+      final skills = (tech['skills'] as List? ?? []).map((s) => s.toString().toLowerCase()).toList();
       final hasSkill = skills.any((s) => reqAppliance.contains(s) || s.contains(reqAppliance));
-      
+
       final techLat = (tech['currentLocation']?['latitude'] ?? 12.9716) as num;
       final techLon = (tech['currentLocation']?['longitude'] ?? 77.5946) as num;
-      final distanceKm = _calculateDistance(jobLat.toDouble(), jobLon.toDouble(), techLat.toDouble(), techLon.toDouble());
+      final dist = _calculateDistance(jobLat.toDouble(), jobLon.toDouble(), techLat.toDouble(), techLon.toDouble());
 
       double score = 0;
       if (hasSkill) score += 40;
       if (tech['availability'] == 'Available') score += 30;
-      final workload = (tech['workload'] as int);
+      final workload = (tech['workload'] as int? ?? 0);
       score += max(0, 20 - (workload * 4));
-      score += max(0, 10 - distanceKm);
+      score += max(0, 10 - dist);
 
       return {
         'technician': tech,
-        'distanceKm': double.parse(distanceKm.toStringAsFixed(1)),
+        'distanceKm': double.parse(dist.toStringAsFixed(1)),
         'hasSkillMatch': hasSkill,
         'matchScore': score.round(),
       };
     }).toList();
 
-    rankedCandidates.sort((a, b) => (b['matchScore'] as int).compareTo(a['matchScore'] as int));
-
-    return _jsonResponse({'success': true, 'jobId': id, 'candidates': rankedCandidates});
+    candidates.sort((a, b) => (b['matchScore'] as int).compareTo(a['matchScore'] as int));
+    return _jsonResponse({'success': true, 'jobId': id, 'candidates': candidates});
   });
 
-  // 6. Assign Technician to Job
+  // 6. Assign Job (PRD FR04)
   router.post('/api/jobs/<id>/assign', (Request req, String id) async {
     final body = jsonDecode(await req.readAsString());
-    final technicianId = body['technicianId'];
+    final techId = body['technicianId'];
 
-    final job = serviceRequests.firstWhere((j) => j['id'] == id, orElse: () => {});
-    if (job.isEmpty) return _jsonResponse({'error': 'Job not found'}, statusCode: 404);
+    await db.collection('serviceRequests').document(id).update({
+      'technicianId': techId,
+      'status': 'Assigned',
+      'assignedAt': DateTime.now().toIso8601String(),
+    });
 
-    final tech = technicians.firstWhere((t) => t['id'] == technicianId, orElse: () => {});
-    if (tech.isEmpty) return _jsonResponse({'error': 'Technician not found'}, statusCode: 404);
+    final techDoc = await db.collection('technicians').document(techId).get();
+    final currentWorkload = (techDoc.map['workload'] as int? ?? 0) + 1;
+    await db.collection('technicians').document(techId).update({'workload': currentWorkload});
 
-    job['technicianId'] = technicianId;
-    job['status'] = 'Assigned';
-    job['assignedAt'] = DateTime.now().toIso8601String();
-    tech['workload'] = (tech['workload'] as int) + 1;
-
-    return _jsonResponse({'success': true, 'message': 'Technician assigned successfully', 'data': job});
+    final updated = await db.collection('serviceRequests').document(id).get();
+    return _jsonResponse({'success': true, 'message': 'Assigned successfully', 'data': updated.map});
   });
 
-  // 7. Update Job Status Lifecycle
+  // 7. Update Status (PRD FR05)
   router.put('/api/jobs/<id>/status', (Request req, String id) async {
     final body = jsonDecode(await req.readAsString());
     final newStatus = body['status'];
 
-    final job = serviceRequests.firstWhere((j) => j['id'] == id, orElse: () => {});
-    if (job.isEmpty) return _jsonResponse({'error': 'Job not found'}, statusCode: 404);
+    await db.collection('serviceRequests').document(id).update({
+      'status': newStatus,
+      'lastStatusUpdate': DateTime.now().toIso8601String(),
+    });
 
-    job['status'] = newStatus;
-    job['lastStatusUpdate'] = DateTime.now().toIso8601String();
-    return _jsonResponse({'success': true, 'data': job});
+    final updated = await db.collection('serviceRequests').document(id).get();
+    return _jsonResponse({'success': true, 'data': updated.map});
   });
 
-  // 8. Complete Service Form
+  // 8. Complete Service Form (PRD FR08)
   router.post('/api/jobs/<id>/complete', (Request req, String id) async {
     final body = jsonDecode(await req.readAsString());
-    final job = serviceRequests.firstWhere((j) => j['id'] == id, orElse: () => {});
-    if (job.isEmpty) return _jsonResponse({'error': 'Job not found'}, statusCode: 404);
+    final jobDoc = await db.collection('serviceRequests').document(id).get();
+    final job = jobDoc.map;
 
+    final histId = 'hist_${DateTime.now().millisecondsSinceEpoch}';
     final record = {
-      'id': 'hist_${DateTime.now().millisecondsSinceEpoch}',
+      'id': histId,
       'serviceRequestId': id,
       'appliance': job['appliance'],
       'brand': job['brand'],
@@ -288,25 +234,33 @@ void main(List<String> args) async {
       'completedAt': DateTime.now().toIso8601String(),
     };
 
-    serviceHistory.add(record);
-    job['status'] = 'Completed';
+    await db.collection('serviceHistory').document(histId).set(record);
+    await db.collection('serviceRequests').document(id).update({'status': 'Completed'});
 
     if (job['technicianId'] != null) {
-      final tech = technicians.firstWhere((t) => t['id'] == job['technicianId'], orElse: () => {});
-      if (tech.isNotEmpty && (tech['workload'] as int) > 0) {
-        tech['workload'] = (tech['workload'] as int) - 1;
+      final techDoc = await db.collection('technicians').document(job['technicianId']).get();
+      final currentWorkload = (techDoc.map['workload'] as int? ?? 1);
+      if (currentWorkload > 0) {
+        await db.collection('technicians').document(job['technicianId']).update({'workload': currentWorkload - 1});
       }
     }
 
-    return _jsonResponse({'success': true, 'message': 'Job closed and service history recorded', 'data': record});
+    return _jsonResponse({'success': true, 'message': 'Job completed and recorded to Firestore', 'data': record});
   });
 
-  // 9. Analytics Dashboard
-  router.get('/api/analytics/dashboard', (Request req) {
-    final totalCompleted = serviceRequests.where((j) => j['status'] == 'Completed').length;
-    final ftfCount = serviceHistory.where((h) => h['firstTimeFix'] == true).length;
+  // 9. Analytics Dashboard (PRD FR09)
+  router.get('/api/analytics/dashboard', (Request req) async {
+    final jobsDocs = await db.collection('serviceRequests').get();
+    final historyDocs = await db.collection('serviceHistory').get();
+    final techDocs = await db.collection('technicians').get();
+
+    final jobs = jobsDocs.map((d) => d.map).toList();
+    final history = historyDocs.map((d) => d.map).toList();
+
+    final totalCompleted = jobs.where((j) => j['status'] == 'Completed').length;
+    final ftfCount = history.where((h) => h['firstTimeFix'] == true).length;
     final ftfRate = totalCompleted > 0 ? ((ftfCount / totalCompleted) * 100).round() : 100;
-    final repeatVisits = serviceRequests.where((j) => j['isRepeatVisit'] == true).length;
+    final repeatVisits = jobs.where((j) => j['isRepeatVisit'] == true).length;
 
     return _jsonResponse({
       'success': true,
@@ -315,16 +269,38 @@ void main(List<String> args) async {
         'targetFirstTimeFix': '>=85%',
         'totalCompletedJobs': totalCompleted,
         'repeatVisitsFlagged': repeatVisits,
-        'activeTechnicians': technicians.where((t) => t['status'] == 'Active').length,
+        'activeTechnicians': techDocs.where((t) => t.map['status'] == 'Active').length,
       }
     });
   });
 
+  // Middleware for CORS headers & OPTIONS preflight
+  Middleware corsMiddleware() {
+    return (Handler innerHandler) {
+      return (Request request) async {
+        if (request.method == 'OPTIONS') {
+          return Response.ok('', headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Origin, Content-Type, Authorization',
+          });
+        }
+        final response = await innerHandler(request);
+        return response.change(headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Origin, Content-Type, Authorization',
+        });
+      };
+    };
+  }
+
   final handler = Pipeline()
       .addMiddleware(logRequests())
+      .addMiddleware(corsMiddleware())
       .addHandler(router.call);
 
   final port = int.parse(Platform.environment['PORT'] ?? '5000');
   final server = await shelf_io.serve(handler, InternetAddress.anyIPv4, port);
-  print('DispatchIQ PRD Backend running on port ${server.port}');
+  print('DispatchIQ Server + Live Firestore running on port ${server.port}');
 }

@@ -7,6 +7,7 @@
       "name": "backend",
       "version": "1.0.0",
       "dependencies": [
+        "firedart",
         "shelf",
         "shelf_router"
       ],
@@ -18,6 +19,16 @@
       "name": "lints",
       "version": "3.0.0",
       "dependencies": []
+    },
+    {
+      "name": "firedart",
+      "version": "0.9.8",
+      "dependencies": [
+        "fixnum",
+        "grpc",
+        "http",
+        "protobuf"
+      ]
     },
     {
       "name": "shelf_router",
@@ -41,31 +52,54 @@
       ]
     },
     {
-      "name": "http_methods",
+      "name": "fixnum",
       "version": "1.1.1",
       "dependencies": []
     },
     {
-      "name": "http_parser",
-      "version": "4.1.2",
+      "name": "protobuf",
+      "version": "3.1.0",
       "dependencies": [
         "collection",
-        "source_span",
-        "string_scanner",
-        "typed_data"
+        "fixnum",
+        "meta"
       ]
     },
     {
-      "name": "collection",
-      "version": "1.19.1",
+      "name": "grpc",
+      "version": "3.2.4",
+      "dependencies": [
+        "archive",
+        "async",
+        "clock",
+        "crypto",
+        "fixnum",
+        "googleapis_auth",
+        "http",
+        "http2",
+        "meta",
+        "protobuf"
+      ]
+    },
+    {
+      "name": "http",
+      "version": "1.6.0",
+      "dependencies": [
+        "async",
+        "http_parser",
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "meta",
+      "version": "1.19.0",
       "dependencies": []
     },
     {
-      "name": "typed_data",
-      "version": "1.4.0",
-      "dependencies": [
-        "collection"
-      ]
+      "name": "http_methods",
+      "version": "1.1.1",
+      "dependencies": []
     },
     {
       "name": "stream_channel",
@@ -87,6 +121,77 @@
       "dependencies": []
     },
     {
+      "name": "http_parser",
+      "version": "4.1.2",
+      "dependencies": [
+        "collection",
+        "source_span",
+        "string_scanner",
+        "typed_data"
+      ]
+    },
+    {
+      "name": "collection",
+      "version": "1.19.1",
+      "dependencies": []
+    },
+    {
+      "name": "async",
+      "version": "2.13.1",
+      "dependencies": [
+        "collection",
+        "meta"
+      ]
+    },
+    {
+      "name": "clock",
+      "version": "1.1.3",
+      "dependencies": []
+    },
+    {
+      "name": "http2",
+      "version": "2.3.1",
+      "dependencies": []
+    },
+    {
+      "name": "googleapis_auth",
+      "version": "1.6.0",
+      "dependencies": [
+        "args",
+        "crypto",
+        "google_identity_services_web",
+        "http",
+        "http_parser"
+      ]
+    },
+    {
+      "name": "crypto",
+      "version": "3.0.7",
+      "dependencies": [
+        "typed_data"
+      ]
+    },
+    {
+      "name": "archive",
+      "version": "3.6.1",
+      "dependencies": [
+        "crypto",
+        "path"
+      ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "typed_data",
+      "version": "1.4.0",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
       "name": "string_scanner",
       "version": "1.4.1",
       "dependencies": [
@@ -103,21 +208,21 @@
       ]
     },
     {
-      "name": "term_glyph",
-      "version": "1.2.2",
-      "dependencies": []
-    },
-    {
-      "name": "async",
-      "version": "2.13.1",
+      "name": "google_identity_services_web",
+      "version": "0.3.3+1",
       "dependencies": [
-        "collection",
-        "meta"
+        "meta",
+        "web"
       ]
     },
     {
-      "name": "meta",
-      "version": "1.19.0",
+      "name": "args",
+      "version": "2.7.0",
+      "dependencies": []
+    },
+    {
+      "name": "term_glyph",
+      "version": "1.2.2",
       "dependencies": []
     }
   ],

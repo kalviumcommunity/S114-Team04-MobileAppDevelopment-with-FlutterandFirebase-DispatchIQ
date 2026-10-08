@@ -1,0 +1,21 @@
+{
+  "name": "s114-team04-mobileappdevelopment-with-flutterandfirebase-dispatchiq",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kalviumcommunity/S114-Team04-MobileAppDevelopment-with-FlutterandFirebase-DispatchIQ.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kalviumcommunity/S114-Team04-MobileAppDevelopment-with-FlutterandFirebase-DispatchIQ/issues"
+  },
+  "homepage": "https://github.com/kalviumcommunity/S114-Team04-MobileAppDevelopment-with-FlutterandFirebase-DispatchIQ#readme"
+}

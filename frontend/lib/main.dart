@@ -317,24 +317,91 @@ class _TechnicianPulse extends StatelessWidget {
 
 class AssignJobSheet extends StatelessWidget {
   const AssignJobSheet({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final technicianOptions = ['Sam Rivera · 1.8 mi away · 2 jobs', 'Maya Chen · 4.2 mi away · 3 jobs', 'Priya Shah · 5.1 mi away · 1 job'];
+    final technicianOptions = [
+      'Sam Rivera · 1.8 mi away · 2 jobs',
+      'Maya Chen · 4.2 mi away · 3 jobs',
+      'Priya Shah · 5.1 mi away · 1 job',
+    ];
+
     return Padding(
       padding: EdgeInsets.fromLTRB(22, 0, 22, MediaQuery.viewInsetsOf(context).bottom + 22),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Assign a technician', style: TextStyle(color: Color(0xFF172A3A), fontSize: 20, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 6),
-        Text('Choose the best fit using location, workload and expertise.', style: TextStyle(color: Colors.blueGrey.shade500, fontSize: 12)),
-        const SizedBox(height: 18),
-        const Text('JOB TO ASSIGN', style: TextStyle(color: Color(0xFF8093A4), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-        const SizedBox(height: 8),
-        Container(width: double.infinity, padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: const Color(0xFFF3F7F5), borderRadius: BorderRadius.circular(9)), child: const Row(children: [Icon(Icons.local_laundry_service_outlined, color: Color(0xFF23845D)), SizedBox(width: 10), Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Oven temperature issue', style: TextStyle(color: Color(0xFF172A3A), fontWeight: FontWeight.w700, fontSize: 13)), SizedBox(height: 3), Text('Riverside · 12:00 - 13:00', style: TextStyle(color: Color(0xFF8093A4), fontSize: 11))])])),
-        const SizedBox(height: 18),
-        RadioGroup<int>(groupValue: 0, onChanged: (_) {}, child: Column(children: technicianOptions.asMap().entries.map((entry) => RadioListTile<int>(value: entry.key, contentPadding: EdgeInsets.zero, title: Text(entry.value, style: const TextStyle(color: Color(0xFF172A3A), fontSize: 12, fontWeight: FontWeight.w600)), subtitle: const Text('Appliance specialist · Good fit', style: TextStyle(fontSize: 10)), activeColor: const Color(0xFF3EB489))).toList())),
-        const SizedBox(height: 6),
-        SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Confirm assignment'))),
-      ]),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Assign a technician',
+            style: TextStyle(color: Color(0xFF172A3A), fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Choose the best fit using location, workload and expertise.',
+            style: TextStyle(color: Colors.blueGrey.shade500, fontSize: 12),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'JOB TO ASSIGN',
+            style: TextStyle(color: Color(0xFF8093A4), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F7F5),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.local_laundry_service_outlined, color: Color(0xFF23845D)),
+                SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Oven temperature issue',
+                      style: TextStyle(color: Color(0xFF172A3A), fontWeight: FontWeight.w700, fontSize: 13),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Riverside · 12:00 - 13:00',
+                      style: TextStyle(color: Color(0xFF8093A4), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Column(
+            children: technicianOptions.asMap().entries.map<Widget>((entry) {
+              return RadioListTile<int>(
+                groupValue: 0,
+                onChanged: (_) {},
+                value: entry.key,
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  entry.value,
+                  style: const TextStyle(color: Color(0xFF172A3A), fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                subtitle: const Text('Appliance specialist · Good fit', style: TextStyle(fontSize: 10)),
+                activeColor: const Color(0xFF3EB489),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Confirm assignment'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

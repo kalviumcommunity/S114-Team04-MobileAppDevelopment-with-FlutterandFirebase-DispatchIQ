@@ -21,6 +21,22 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+  final PageController _pageController = PageController();
+
+  void _onTabSelected(int index) {
+    setState(() => _selectedIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,33 +61,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final workloadUtilization =
         maxWorkload == 0 ? 0.0 : assignedWorkload / maxWorkload;
 
+    final screens = [
+      _DashboardBody(
+        todayJobs: todayJobs,
+        availableTechs: availableTechs,
+        onRouteTechnicians: onRouteTechnicians,
+        busyTechnicians: busyTechnicians,
+        delayedJobs: delayedJobs,
+        unassignedJobs: unassignedJobs,
+        onRouteJobs: onRouteJobs,
+        atRiskJobs: atRiskJobs,
+        workloadUtilization: workloadUtilization,
+      ),
+      const JobsScreen(),
+      const TechniciansScreen(),
+      const AnalyticsScreen(),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
       body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: [
-            _DashboardBody(
-              todayJobs: todayJobs,
-              availableTechs: availableTechs,
-              onRouteTechnicians: onRouteTechnicians,
-              busyTechnicians: busyTechnicians,
-              delayedJobs: delayedJobs,
-              unassignedJobs: unassignedJobs,
-              onRouteJobs: onRouteJobs,
-              atRiskJobs: atRiskJobs,
-              workloadUtilization: workloadUtilization,
-            ),
-            const JobsScreen(),
-            const TechniciansScreen(),
-            const AnalyticsScreen(),
-            const ProfileScreen(),
-          ],
+        child: PageView(
+          controller: _pageController,
+          onPageChanged: (index) => setState(() => _selectedIndex = index),
+          children: screens,
         ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) =>
-            setState(() => _selectedIndex = index),
+        onDestinationSelected: _onTabSelected,
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Home'),
           NavigationDestination(
@@ -123,35 +142,30 @@ class _DashboardBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      currentGreeting,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.muted,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Today\'s Dispatch',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.navy,
-                        letterSpacing: -0.8,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               Row(
                 children: [
+                  IconButton(
+                    tooltip: 'Open profile',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ProfileScreen(),
+                        ),
+                      );
+                    },
+                    icon: const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: AppTheme.primarySoft,
+                      child: Icon(
+                        Icons.person_rounded,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
                   IconButton(
                     onPressed: () {
                       Navigator.of(context).push(
@@ -162,13 +176,26 @@ class _DashboardBody extends StatelessWidget {
                     icon: const Icon(Icons.notifications_none_rounded,
                         color: AppTheme.navy),
                   ),
-                  const SizedBox(width: 4),
-                  const CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AppTheme.primarySoft,
-                    child: Icon(Icons.person_rounded, color: AppTheme.primary),
-                  ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                currentGreeting,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.muted,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Today\'s Dispatch',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.navy,
+                  letterSpacing: -0.8,
+                ),
               ),
             ],
           ),

@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dispatch_iq/app/app.dart';
 import 'package:dispatch_iq/services/assignment_service.dart';
 import 'package:dispatch_iq/models/job.dart';
+import 'package:dispatch_iq/models/technician.dart';
 import 'package:dispatch_iq/screens/analytics/analytics_screen.dart';
 import 'package:dispatch_iq/screens/dashboard/dashboard_screen.dart';
 import 'package:dispatch_iq/screens/jobs/jobs_screen.dart';
@@ -62,6 +63,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(LoginScreen), findsOneWidget);
+  });
+
+  testWidgets('dashboard profile icon opens profile actions', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: DashboardScreen()));
+    await tester.tap(find.byTooltip('Open profile'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Account settings'), findsOneWidget);
+    expect(find.text('Help & Support'), findsOneWidget);
+    expect(find.text('Logout'), findsOneWidget);
   });
 
   test('assigning a technician updates the shared job data', () {
@@ -134,6 +145,20 @@ void main() {
     );
   });
 
+  test('available technician listing includes on-route staff', () {
+    final available = TechnicianService.getAvailableTechnicians();
+
+    expect(
+      available
+          .any((technician) => technician.status == TechnicianStatus.onRoute),
+      isTrue,
+    );
+    expect(
+      available.any((technician) => technician.status == TechnicianStatus.busy),
+      isFalse,
+    );
+  });
+
   test('repeat visit detection matches recent same-appliance faults', () {
     final seed = JobService.allJobs.firstWhere((job) => job.id == 'JOB-1001');
     final unflagged = seed.copyWith(
@@ -185,7 +210,8 @@ void main() {
     expect(find.text(job.fault), findsOneWidget);
   });
 
-  testWidgets('dashboard at-risk metric displays a numeric count', (tester) async {
+  testWidgets('dashboard at-risk metric displays a numeric count',
+      (tester) async {
     await tester.pumpWidget(const MaterialApp(home: DashboardScreen()));
 
     expect(find.textContaining("Instance of 'Job'"), findsNothing);

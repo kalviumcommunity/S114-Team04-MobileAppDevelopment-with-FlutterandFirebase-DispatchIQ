@@ -102,8 +102,7 @@ class JobService {
       throw ArgumentError.value(
           technicianId, 'technicianId', 'No matching technician');
     }
-    if ((technician.status != TechnicianStatus.available &&
-            technician.status != TechnicianStatus.onRoute) ||
+    if (!TechnicianService.isAvailableForDispatch(technician) ||
         technician.currentWorkload >= technician.maxWorkload) {
       throw StateError('Technician is not available for assignment');
     }

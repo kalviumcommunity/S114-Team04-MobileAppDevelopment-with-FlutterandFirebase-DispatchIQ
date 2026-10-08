@@ -1,12 +1,15 @@
 import '../data/mock_data.dart';
 import '../models/job.dart';
 import '../models/technician.dart';
+import 'technician_service.dart';
 
 class AssignmentService {
   static List<Technician> getRecommendedTechnicians(Job job) {
     final candidates = MockData.technicians.where((technician) {
-      final hasExpertise = technician.expertise.any((item) => item.toLowerCase() == job.applianceType.toLowerCase());
-      final isAvailable = technician.status == TechnicianStatus.available || technician.status == TechnicianStatus.onRoute;
+      final hasExpertise = technician.expertise.any(
+        (item) => item.toLowerCase() == job.applianceType.toLowerCase(),
+      );
+      final isAvailable = TechnicianService.isAvailableForDispatch(technician);
       final withinLoad = technician.currentWorkload < technician.maxWorkload;
       final hasSchedule = technician.currentAssignedJobs.length < 3;
       return hasExpertise && isAvailable && withinLoad && hasSchedule;

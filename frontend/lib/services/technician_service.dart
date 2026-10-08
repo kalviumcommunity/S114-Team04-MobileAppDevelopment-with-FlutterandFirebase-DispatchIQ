@@ -4,9 +4,14 @@ import '../models/technician.dart';
 class TechnicianService {
   static List<Technician> get allTechnicians => MockData.technicians;
 
+  static bool isAvailableForDispatch(Technician technician) {
+    return technician.status == TechnicianStatus.available ||
+        technician.status == TechnicianStatus.onRoute;
+  }
+
   static List<Technician> getAvailableTechnicians() {
     return allTechnicians
-        .where((t) => t.status == TechnicianStatus.available)
+        .where(isAvailableForDispatch)
         .toList();
   }
 
